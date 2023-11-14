@@ -1,0 +1,41 @@
+name: 'Synchronize two drupal instances'
+description: 'Assumes robo.yml is configured on the target server and eaudeweb/heavy-lifter on the source server'
+inputs:
+  target_ssh_user:
+    description: 'Destination SSH user account'
+    required: true
+  target_ssh_host:
+    description: 'Destination SSH host server'
+    required: true
+  target_ssh_key:
+    description: 'Destination SSH private key'
+    required: true
+  target_project_dir:
+    description: 'Absolute path where the project root is configured (where live symlink exists)'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: 'Configure SSH'
+      run: |
+        mkdir -p ~/.ssh/
+        echo "$SSH_KEY" > ~/.ssh/server.key
+        chmod 600 ~/.ssh/server.key
+        cat > ~/.ssh/config <<END
+        Host target_server
+          HostName $SSH_HOST
+          User $SSH_USER
+          IdentityFile ~/.ssh/server.key
+          StrictHostKeyChecking no
+        END
+      env:
+        TARGET_SSH_USER: ${{ inputs.target_ssh_user }}
+        TARGET_SSH_HOST: ${{ inputs.target_ssh_host }}
+        TARGET_SSH_KEY: ${{ inputs.target_ssh_key }}
+      shell: bash
+
+    - name: 'Synchronize database from source to target'
+      run: |
+        ssh target_server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo sql:sync'
+      shell: bash
