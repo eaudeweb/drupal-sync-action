@@ -13,8 +13,11 @@ inputs:
   target_project_dir:
     description: 'Absolute path where the project root is configured (where live symlink exists)'
     required: true
+  sync_db:
+    description: 'Sync SQL database'
+    default: true
   sync_files:
-    description: 'Sync also "files" archive'
+    description: 'Sync "files" archive'
     default: false
 
 runs:
@@ -39,11 +42,12 @@ runs:
       shell: bash
 
     - name: 'Synchronize database from source to target'
+      if:  ${{ inputs.sync_db == 'true' }}
       run: |
-        ssh target_server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo sql:sync'
+        ssh server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo sql:sync'
       shell: bash
     - name: 'Synchronize files archive'
       if:  ${{ inputs.sync_files == 'true' }}
       run: |
-        ssh target_server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo files:sync'
+        ssh server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo files:sync'
       shell: bash
