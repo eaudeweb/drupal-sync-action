@@ -33,6 +33,8 @@ jobs:
           target_ssh_user:             ${{ secrets.TEST_SSH_USER }}
           target_ssh_host:             ${{ secrets.TEST_SSH_HOST }}
           target_ssh_key:              ${{ secrets.TEST_SSH_KEY }}
+          ssh_user_jumphost:           ${{ secrets.TEST_SSH_USER_JUMPHOST }}
+          ssh_host_jumphost:           ${{ secrets.TEST_SSH_HOST_JUMPHOST }}
           target_project_dir:          /var/www/html/example.org
           sync_db: ${{ inputs.sync_db }}
           sync_files: ${{ inputs.sync_files }}
