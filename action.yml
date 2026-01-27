@@ -1,5 +1,5 @@
 name: 'Synchronize two drupal instances'
-description: 'Assumes robo.yml is configured on the target server and eaudeweb/heavy-lifter on the source server'
+description: 'Assumes Github Secrets for nextcloud are set up'
 inputs:
   target_ssh_user:
     description: 'Destination SSH user account'
@@ -24,9 +24,25 @@ inputs:
   sync_db:
     description: 'Sync SQL database'
     default: true
-  sync_files:
-    description: 'Sync "files" archive'
-    default: false
+  # sync_files:
+  #   description: 'Sync "files" archive'
+  #   default: false
+  nextcloud_user:
+    description: 'Nextcloud username for sync'
+    required: false
+    default: ''
+  nextcloud_password:
+    description: 'Nextcloud app password for sync'
+    required: false
+    default: ''
+  nextcloud_path:
+    description: 'Project folder path in Nextcloud'
+    required: false
+    default: ''
+  nextcloud_base_url:
+    description: 'Nextcloud base URL'
+    required: false
+    default: 'https://drive.eaudeweb.ro'
 
 runs:
   using: "composite"
@@ -81,10 +97,37 @@ runs:
     - name: 'Synchronize database from source to target'
       if:  ${{ inputs.sync_db == 'true' }}
       run: |
-        ssh server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo sql:sync'
+        SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/database.sql.gz"
+        
+        ssh server "
+          cd ${{ inputs.target_project_dir }} &&
+          ./vendor/bin/robo sql:sync \
+            -D sites.default.sync.username=\"${NEXTCLOUD_USER}\" \
+            -D sites.default.sync.password=\"${NEXTCLOUD_PASSWORD}\" \
+            -D sites.default.sql.sync.source=\"${SOURCE_URL}\"
+        "
+      env:
+        NEXTCLOUD_USER: ${{ inputs.nextcloud_user }}
+        NEXTCLOUD_PASSWORD: ${{ inputs.nextcloud_password }}
+        NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
+        NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
       shell: bash
-    - name: 'Synchronize files archive'
-      if:  ${{ inputs.sync_files == 'true' }}
-      run: |
-        ssh server 'cd ${{ inputs.target_project_dir }} && ./vendor/bin/robo files:sync'
-      shell: bash
+
+    # - name: 'Synchronize files archive'
+    #   if:  ${{ inputs.sync_files == 'true' }}
+    #   run: |
+    #     SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/files.tar.gz"
+        
+    #     ssh server "
+    #       cd ${{ inputs.target_project_dir }} &&
+    #       ./vendor/bin/robo files:sync \
+    #         -D sites.default.sync.username=\"${NEXTCLOUD_USER}\" \
+    #         -D sites.default.sync.password=\"${NEXTCLOUD_PASSWORD}\" \
+    #         -D sites.default.files.sync.source=\"${SOURCE_URL}\"
+    #     "
+    #   env:
+    #     NEXTCLOUD_USER: ${{ inputs.nextcloud_user }}
+    #     NEXTCLOUD_PASSWORD: ${{ inputs.nextcloud_password }}
+    #     NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
+    #     NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
+    #   shell: bash
