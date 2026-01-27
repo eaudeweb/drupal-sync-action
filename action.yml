@@ -31,7 +31,7 @@ inputs:
     description: 'Nextcloud username for sync'
     required: false
     default: ''
-  nextcloud_password:
+  nextcloud_app_password:
     description: 'Nextcloud app password for sync'
     required: false
     default: ''
@@ -103,12 +103,12 @@ runs:
           cd ${{ inputs.target_project_dir }} &&
           ./vendor/bin/robo sql:sync \
             -D sites.default.sync.username=\"${NEXTCLOUD_USER}\" \
-            -D sites.default.sync.password=\"${NEXTCLOUD_PASSWORD}\" \
+            -D sites.default.sync.password=\"${NEXTCLOUD_APP_PASSWORD}\" \
             -D sites.default.sql.sync.source=\"${SOURCE_URL}\"
         "
       env:
         NEXTCLOUD_USER: ${{ inputs.nextcloud_user }}
-        NEXTCLOUD_PASSWORD: ${{ inputs.nextcloud_password }}
+        NEXTCLOUD_APP_PASSWORD: ${{ inputs.nextcloud_app_password }}
         NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
         NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
       shell: bash
