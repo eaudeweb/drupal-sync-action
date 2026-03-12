@@ -97,7 +97,7 @@ runs:
     - name: 'Synchronize database from source to target'
       if:  ${{ inputs.sync_db == 'true' }}
       run: |
-        SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/database.sql.gz"
+        SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/mysql/database.sql.gz"
         
         ssh server "
           cd ${{ inputs.target_project_dir }} &&
