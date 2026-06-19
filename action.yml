@@ -23,10 +23,7 @@ inputs:
     required: true
   sync_db:
     description: 'Sync SQL database'
-    default: true
-  # sync_files:
-  #   description: 'Sync "files" archive'
-  #   default: false
+    default: 'true'
   nextcloud_user:
     description: 'Nextcloud username for sync'
     required: false
@@ -112,22 +109,3 @@ runs:
         NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
         NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
       shell: bash
-
-    # - name: 'Synchronize files archive'
-    #   if:  ${{ inputs.sync_files == 'true' }}
-    #   run: |
-    #     SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/files.tar.gz"
-        
-    #     ssh server "
-    #       cd ${{ inputs.target_project_dir }} &&
-    #       ./vendor/bin/robo files:sync \
-    #         -D sites.default.sync.username=\"${NEXTCLOUD_USER}\" \
-    #         -D sites.default.sync.password=\"${NEXTCLOUD_PASSWORD}\" \
-    #         -D sites.default.files.sync.source=\"${SOURCE_URL}\"
-    #     "
-    #   env:
-    #     NEXTCLOUD_USER: ${{ inputs.nextcloud_user }}
-    #     NEXTCLOUD_PASSWORD: ${{ inputs.nextcloud_password }}
-    #     NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
-    #     NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
-    #   shell: bash
