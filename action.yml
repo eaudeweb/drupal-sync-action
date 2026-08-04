@@ -96,13 +96,35 @@ runs:
       run: |
         SOURCE_URL="${NEXTCLOUD_BASE_URL}/remote.php/dav/files/${NEXTCLOUD_USER}/${NEXTCLOUD_PATH}/mysql/database.sql.gz"
         
+        # Capture the sync output so we can detect import errors that robo/mysql
+        # may not surface via exit code: a dropped connection mid-import prints
+        # "ERROR <errno> (<SQLSTATE>) at line <N>" but robo can still exit 0,
+        # leaving a silently partial import. We check the exit code AND scan for
+        # the mysql client error signature.
+        set +e
         ssh server "
           cd ${{ inputs.target_project_dir }} &&
           ./vendor/bin/robo sql:sync \
             -D sites.default.sync.username=\"${NEXTCLOUD_USER}\" \
             -D sites.default.sync.password=\"${NEXTCLOUD_APP_PASSWORD}\" \
             -D sites.default.sql.sync.source=\"${SOURCE_URL}\"
-        "
+        " 2>&1 | tee sync.log
+        rc=${PIPESTATUS[0]}
+        set -e
+
+        if [ "$rc" -ne 0 ]; then
+          echo "::error::Database sync failed (ssh/robo exit code $rc)"
+          exit 1
+        fi
+
+        # mysql prints every import error as: ERROR <errno> (<SQLSTATE>) at line <N>: ...
+        # Match the format (5-char SQLSTATE), not a specific message, so any import
+        # error is caught even when robo masks the exit code.
+        if grep -qE 'ERROR [0-9]+ \([0-9A-Z]{5}\)' sync.log; then
+          echo "::error::Database import reported an error (possible partial import):"
+          grep -nE 'ERROR [0-9]+ \([0-9A-Z]{5}\)' sync.log || true
+          exit 1
+        fi
       env:
         NEXTCLOUD_USER: ${{ inputs.nextcloud_user }}
         NEXTCLOUD_APP_PASSWORD: ${{ inputs.nextcloud_app_password }}
