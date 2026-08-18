@@ -40,6 +40,10 @@ inputs:
     description: 'Nextcloud base URL'
     required: false
     default: 'https://drive.eaudeweb.ro'
+  unblock_users:
+    description: 'Comma delimited list of user names to unblock after the import. The imported database carries the source instance account status, so accounts blocked in production stay blocked on the target. Leave empty to skip.'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -130,4 +134,19 @@ runs:
         NEXTCLOUD_APP_PASSWORD: ${{ inputs.nextcloud_app_password }}
         NEXTCLOUD_PATH: ${{ inputs.nextcloud_path }}
         NEXTCLOUD_BASE_URL: ${{ inputs.nextcloud_base_url }}
+      shell: bash
+
+    - name: 'Unblock accounts on the target'
+      if: ${{ inputs.sync_db == 'true' && inputs.unblock_users != '' }}
+      run: |
+        set -euo pipefail
+        echo "Unblocking: ${USERS}"
+        ssh server "PROJECT_DIR='${PROJECT_DIR}' USERS='${USERS}' bash -s" <<'REMOTE'
+        set -euo pipefail
+        cd "$PROJECT_DIR"
+        ./vendor/bin/drush user:unblock "$USERS"
+        REMOTE
+      env:
+        PROJECT_DIR: ${{ inputs.target_project_dir }}
+        USERS: ${{ inputs.unblock_users }}
       shell: bash

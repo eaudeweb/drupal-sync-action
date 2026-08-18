@@ -25,3 +25,18 @@ jobs:
           nextcloud_user:              ${{ secrets.NEXTCLOUD_USER }}
           nextcloud_app_password:      ${{ secrets.NEXTCLOUD_APP_PASSWORD }}
 ```
+
+## Unblocking accounts after the import
+
+The dump carries the account status from the source instance, so users blocked in
+production land blocked on the target. Pass a comma delimited list of user names
+to `unblock_users` and the action runs `drush user:unblock` on them once the
+import finishes:
+
+```yml
+          unblock_users:               ${{ vars.TEST_UNBLOCK_USERS }}
+```
+
+Keeping the list in a repository variable means adding or removing an account
+does not require changing the workflow. The step is skipped when the input is
+empty, and when `sync_db` is `false`.
